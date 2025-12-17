@@ -3,6 +3,7 @@
    [cheshire.core :as json]
    [clojure.java.io :as io]
    [clojure.string :as string]
+   [eca.client-http :as client]
    [eca.config :as config]
    [eca.features.login :as f.login]
    [eca.llm-util :as llm-util]
@@ -26,7 +27,10 @@
                         json/parse-string)]
     (get-in payload ["https://api.openai.com/auth" "chatgpt_account_id"])))
 
-(defn ^:private base-responses-request! [{:keys [rid body api-url auth-type url-relative-path api-key on-error on-stream]}]
+(defn ^:private base-responses-request!
+  "Sends a Responses API request using options from
+  `eca.client-http/*hato-http-client*` when present."
+  [{:keys [rid body api-url auth-type url-relative-path api-key on-error on-stream]}]
   (let [oauth? (= :auth/oauth auth-type)
         url (if oauth?
               codex-url
@@ -40,7 +44,8 @@
     (llm-util/log-request logger-tag rid url body)
     @(http/post
       url
-      {:headers (assoc-some
+      {:http-client client/*hato-http-client*
+       :headers (assoc-some
                  {"Authorization" (str "Bearer " api-key)
                   "Content-Type" "application/json"}
                  "chatgpt-account-id" (jtw-token->account-id api-key)
@@ -269,10 +274,17 @@
                                                :code_challenge_method "S256"
                                                :state verifier}))}))
 
-(defn ^:private oauth-authorize [server-url code verifier]
+(def ^:private oauth-token-url
+  "https://auth.openai.com/oauth/token")
+
+(defn ^:private oauth-authorize
+  "Sends a token request to the OpenAI OAuth endpoint using
+  `eca.client-http/*hato-http-client*` when present."
+  [server-url code verifier]
   (let [{:keys [status body]} (http/post
-                               "https://auth.openai.com/oauth/token"
-                               {:headers {"Content-Type" "application/json"}
+                               oauth-token-url
+                               {:http-client client/*hato-http-client*
+                                :headers {"Content-Type" "application/json"}
                                 :body (json/generate-string
                                        {:grant_type "authorization_code"
                                         :client_id client-id

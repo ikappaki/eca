@@ -3,6 +3,7 @@
    [cheshire.core :as json]
    [clojure.java.io :as io]
    [clojure.string :as string]
+   [eca.client-http :as client]
    [eca.llm-util :as llm-util]
    [eca.logger :as logger]
    [eca.shared :refer [assoc-some deep-merge]]
@@ -86,7 +87,10 @@
                        (string/join "\n")
                        not-empty)}))
 
+
 (defn ^:private base-chat-request!
+  "Sends a chat-completions request using
+  `eca.client-http/*hato-http-client*` if present."
   [{:keys [rid extra-headers body url-relative-path api-url api-key on-error on-stream on-tools-called-wrapper]}]
   (let [url (str api-url (or url-relative-path chat-completions-path))
         on-error (if on-stream
@@ -97,7 +101,8 @@
     (llm-util/log-request logger-tag rid url body)
     @(http/post
       url
-      {:headers (merge {"Authorization" (str "Bearer " api-key)
+      {:http-client client/*hato-http-client*
+       :headers (merge {"Authorization" (str "Bearer " api-key)
                         "Content-Type" "application/json"}
                        extra-headers)
        :body (json/generate-string body)
