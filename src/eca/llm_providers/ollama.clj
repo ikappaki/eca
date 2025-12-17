@@ -2,6 +2,7 @@
   (:require
    [cheshire.core :as json]
    [clojure.java.io :as io]
+   [eca.client-http :as client]
    [eca.llm-util :as llm-util]
    [eca.logger :as logger]
    [eca.shared :refer [deep-merge]]
@@ -20,7 +21,8 @@
     (let [rid (llm-util/gen-rid)
           {:keys [status body]} (http/get
                                  (format list-models-url api-url)
-                                 {:throw-exceptions? false
+                                 {:http-client client/*hato-http-client*
+                                  :throw-exceptions? false
                                   :as :json})]
       (if (= 200 status)
         (do
@@ -37,7 +39,8 @@
     (let [rid (llm-util/gen-rid)
           {:keys [status body]} (http/post
                                  (format show-model-url api-url)
-                                 {:throw-exceptions? false
+                                 {:http-client client/*hato-http-client*
+                                  :throw-exceptions? false
                                   :body (json/generate-string {:model model})
                                   :as :json})]
       (if (= 200 status)
@@ -63,7 +66,8 @@
     (llm-util/log-request logger-tag rid url body {})
     @(http/post
       url
-      {:body (json/generate-string body)
+      {:http-client client/*hato-http-client*
+       :body (json/generate-string body)
        :throw-exceptions? false
        :async? true
        :as (if on-stream :stream :json)}

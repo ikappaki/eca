@@ -1,6 +1,7 @@
 (ns eca.llm-providers.copilot
   (:require
    [cheshire.core :as json]
+   [eca.client-http :as client]
    [eca.config :as config]
    [eca.features.login :as f.login]
    [hato.client :as http]))
@@ -13,10 +14,14 @@
    "editor-plugin-version" "eca/*"
    "editor-version" (str "eca/" (config/eca-version))})
 
+(def ^:private oauth-login-device-url
+  "https://github.com/login/device/code")
+
 (defn ^:private oauth-url []
   (let [{:keys [body]} (http/post
-                        "https://github.com/login/device/code"
-                        {:headers (auth-headers)
+                        oauth-login-device-url
+                        {:http-client client/*hato-http-client*
+                         :headers (auth-headers)
                          :body (json/generate-string {:client_id client-id
                                                       :scope "read:user"})
                          :as :json})]
@@ -24,10 +29,14 @@
      :device-code (:device_code body)
      :url (:verification_uri body)}))
 
+(def ^:private oauth-login-device-code-url
+  "https://github.com/login/device/code")
+
 (defn ^:private oauth-access-token [device-code]
   (let [{:keys [status body]} (http/post
-                               "https://github.com/login/oauth/access_token"
-                               {:headers (auth-headers)
+                               oauth-login-device-code-url
+                               {:http-client client/*hato-http-client*
+                                :headers (auth-headers)
                                 :body (json/generate-string {:client_id client-id
                                                              :device_code device-code
                                                              :grant_type "urn:ietf:params:oauth:grant-type:device_code"})
@@ -39,10 +48,14 @@
                       {:status status
                        :body body})))))
 
+(def ^:private oauth-copilot-token-url
+  "https://api.github.com/copilot_internal/v2/token")
+
 (defn ^:private oauth-renew-token [access-token]
   (let [{:keys [status body]} (http/get
-                               "https://api.github.com/copilot_internal/v2/token"
-                               {:headers (merge (auth-headers)
+                               oauth-copilot-token-url
+                               {:http-client client/*hato-http-client*
+                                :headers (merge (auth-headers)
                                                 {"authorization" (str "token " access-token)})
                                 :throw-exceptions? false
                                 :as :json})]
