@@ -56,7 +56,7 @@ BasicAuth %s %s
 LogLevel Info" (:host proxy-conf) (:port proxy-conf) (:user proxy-conf) (:pass proxy-conf)))
 (def proxy-http
   "Proxy URL with credentials."
-  (format "http://%s:%s@%s:%d"
+  (format "http://%s:%s@%s:%s"
           (:user proxy-conf) (:pass proxy-conf) (:host proxy-conf) (:port proxy-conf)))
 
 (println :proxy-http proxy-http (:user proxy-conf) (:pass proxy-conf) (:host proxy-conf) (:port proxy-conf)
