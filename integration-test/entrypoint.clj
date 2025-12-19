@@ -59,7 +59,7 @@ LogLevel Info" (:host proxy-conf) (:port proxy-conf) (:user proxy-conf) (:pass p
   (format "http://%s:%s@%s:%d"
           (:user proxy-conf) (:pass proxy-conf) (:host proxy-conf) (:port proxy-conf)))
 
-(println :proxy-http proxy-http)
+(println :proxy-http proxy-http (:user proxy-conf) (:pass proxy-conf) (:host proxy-conf) (:port proxy-conf))
 
 (defn tinyproxy-start!
   "Start a transient Tinyproxy process using the `tinyrpoxy-conf`; looks
