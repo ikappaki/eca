@@ -96,7 +96,11 @@ jobs:
           bb prod-cli
 
       - name: Run integration tests
-        run: bb integration-test --proxy
+        run: |
+          bb integration-test --proxy
+          pwd
+          cat /home/runner/work/eca/eca/integration-test/out/tinyproxy.log
+          cat /home/runner/work/eca/eca/integration-test/out/server.stderr.txt
 
   # graalvm-build:
   #   runs-on: ubuntu-22.04
