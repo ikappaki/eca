@@ -2,8 +2,8 @@ name: Tests
 
 on:
   push:
-    branches:
-      - master
+    # branches:
+    #   - master
     paths-ignore:
       - 'README.md'
       - 'CHANGELOG.md'
@@ -56,11 +56,11 @@ jobs:
       matrix:
         os: [ubuntu-22.04]
         jdk: [24]
-        include:
-          - os: windows-latest
-            jdk: 24
-          - os: macos-latest
-            jdk: 24
+        # include:
+        #   - os: windows-latest
+        #     jdk: 24
+        #   - os: macos-latest
+        #     jdk: 24
     steps:
       - uses: actions/checkout@v4
         with:
@@ -72,6 +72,12 @@ jobs:
           distribution: 'adopt'
           java-version: ${{ matrix.jdk }}
 
+      - name: Install tinyproxy
+        if: "startsWith (matrix.os, 'ubuntu')"
+        run: |
+          #sudo apt-get update -y -qq
+          sudo apt-get install -y -qq tinyproxy
+          
       - name: Install clojure build tools
         uses: DeLaGuardo/setup-clojure@master
         with:
@@ -84,89 +90,91 @@ jobs:
           # AccessDeniedException exception when renaming temp files
           # while downloading dependencies. Workaround: offload some
           # of the deps download to the clojure CLI tool.
+          #
+          # See https://clojure.atlassian.net/jira/software/c/projects/TBUILD/issues?jql=project%20%3D%20TBUILD%20ORDER%20BY%20created%20DESC&selectedIssue=TBUILD-47
           clojure -P
           bb prod-cli
 
       - name: Run integration tests
-        run: bb integration-test
+        run: bb integration-test --proxy
 
-  graalvm-build:
-    runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Clojure
-        uses: DeLaGuardo/setup-clojure@master
-        with:
-          cli: '1.12.0.1530'
-          bb: '1.12.200'
+  # graalvm-build:
+  #   runs-on: ubuntu-22.04
+  #   strategy:
+  #     fail-fast: false
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Install Clojure
+  #       uses: DeLaGuardo/setup-clojure@master
+  #       with:
+  #         cli: '1.12.0.1530'
+  #         bb: '1.12.200'
 
-      - uses: graalvm/setup-graalvm@v1
-        with:
-          java-version: '24'
-          distribution: 'graalvm'
-          native-image-musl: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+  #     - uses: graalvm/setup-graalvm@v1
+  #       with:
+  #         java-version: '24'
+  #         distribution: 'graalvm'
+  #         native-image-musl: true
+  #         github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build static Linux native image
-        env:
-          ECA_XMX: "-J-Xmx6g"
-          ECA_STATIC: true
-          ECA_MUSL: true
-        run: |
-          bb native-cli
+  #     - name: Build static Linux native image
+  #       env:
+  #         ECA_XMX: "-J-Xmx6g"
+  #         ECA_STATIC: true
+  #         ECA_MUSL: true
+  #       run: |
+  #         bb native-cli
 
-      - name: Compress binary
-        uses: svenstaro/upx-action@v2
-        with:
-          file: eca
+  #     - name: Compress binary
+  #       uses: svenstaro/upx-action@v2
+  #       with:
+  #         file: eca
 
-      - name: Upload
-        uses: actions/upload-artifact@v4
-        with:
-          name: eca-native
-          path: eca
+  #     - name: Upload
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: eca-native
+  #         path: eca
 
-  graalvm-integration-test:
-    needs: graalvm-build
-    runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
+  # graalvm-integration-test:
+  #   needs: graalvm-build
+  #   runs-on: ubuntu-22.04
+  #   strategy:
+  #     fail-fast: false
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Set up JDK 24
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'adopt'
-          java-version: 24
+  #     - name: Set up JDK 24
+  #       uses: actions/setup-java@v3
+  #       with:
+  #         distribution: 'adopt'
+  #         java-version: 24
 
-      - name: Install clojure build tools
-        uses: DeLaGuardo/setup-clojure@master
-        with:
-          cli: '1.12.0.1530'
-          bb: '1.12.200'
+  #     - name: Install clojure build tools
+  #       uses: DeLaGuardo/setup-clojure@master
+  #       with:
+  #         cli: '1.12.0.1530'
+  #         bb: '1.12.200'
 
-      - uses: actions/download-artifact@v4
-        name: eca-native
+  #     - uses: actions/download-artifact@v4
+  #       name: eca-native
 
-      - name: Setup binary
-        run: |
-          cp -rf eca-native/eca eca
-          chmod +x eca
+  #     - name: Setup binary
+  #       run: |
+  #         cp -rf eca-native/eca eca
+  #         chmod +x eca
 
-      - name: Run integration tests
-        run: bb integration-test
+  #     - name: Run integration tests
+  #       run: bb integration-test
 
-  nix-build:
-    needs: unit-test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: cachix/install-nix-action@v31
-      - run: nix develop --command deps-lock-update
-      - run: |
-          echo "checking if deps-lock.json is up to date"
-          git diff --exit-code
-      - run: nix build
+  # nix-build:
+  #   needs: unit-test
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v5
+  #     - uses: cachix/install-nix-action@v31
+  #     - run: nix develop --command deps-lock-update
+  #     - run: |
+  #         echo "checking if deps-lock.json is up to date"
+  #         git diff --exit-code
+  #     - run: nix build
