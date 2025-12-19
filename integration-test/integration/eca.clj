@@ -39,6 +39,9 @@ If `*http-proxy*` is set, passes it as the `HTTP_PROXY` environment variable."
                         :exit-fn (fn [{:keys [cmd exit]}]
                                    (when (not= exit 0)
                                      (println :--eca.integration.start-server/exited :cmd cmd :exit-status exit :log log-path)
+                                     (try
+                                       (println :log (slurp log-path))
+                                       (catch Exception _e))
                                      (System/exit exit)))}
                  *http-proxy*
                  (assoc :extra-env {"HTTP_PROXY" *http-proxy*})))))
