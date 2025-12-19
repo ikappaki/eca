@@ -59,16 +59,6 @@ LogLevel Info" (:host proxy-conf) (:port proxy-conf) (:user proxy-conf) (:pass p
   (format "http://%s:%s@%s:%s"
           (:user proxy-conf) (:pass proxy-conf) (:host proxy-conf) (:port proxy-conf)))
 
-(println :proxy-http proxy-http (:user proxy-conf) (:pass proxy-conf) (:host proxy-conf) (:port proxy-conf)
-         (format "http://%s:%s@%s:%d"
-                 (:user proxy-conf) (:pass proxy-conf) (:host proxy-conf) (:port proxy-conf))
-         (format "http://%s:%s@%s"
-                 (:user proxy-conf) (:pass proxy-conf) (:host proxy-conf))
-         (format "http://%s:%s"
-          (:user proxy-conf) (:pass proxy-conf))
-         (format "http://%s"
-          (:user proxy-conf) ))
-
 (defn tinyproxy-start!
   "Start a transient Tinyproxy process using the `tinyrpoxy-conf`; looks
   for the executable `tinyproxy` in `tinyproxy-dir-env-var` or system PATH.
@@ -91,6 +81,14 @@ LogLevel Info" (:host proxy-conf) (:port proxy-conf) (:user proxy-conf) (:pass p
         (println :---tinyrpoxy :end)
         (p/process cmd-full
                    {:out (io/file out-log)
+                    :exit-fn
+                    (fn [{:keys [cmd exit]}]
+                      (when (not= exit 0)
+                        (println :--entrypoint.tinyproxy-server/exited :cmd cmd :exit-status exit)
+                        (try
+                          (println :log (slurp out-log))
+                          (catch Exception _e))
+                        (System/exit exit)))
                     :shutdown p/destroy-tree
                     :err :out})))))
 
