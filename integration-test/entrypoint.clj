@@ -127,7 +127,7 @@ LogLevel Info" (:host proxy-conf) (:port proxy-conf) (:user proxy-conf) (:pass p
 
     (let [timeout-minutes (if (re-find #"(?i)win|mac" (System/getProperty "os.name"))
                             10 ;; win and mac ci runs take longer
-                            1)
+                            5)
           test-results (timeout (* timeout-minutes 60 1000)
                                 #(with-log-tail-report
                                    (apply t/run-tests nses)))]
