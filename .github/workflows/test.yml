@@ -97,7 +97,7 @@ jobs:
 
       - name: Run integration tests
         run: |
-          bb integration-test --proxy --dev || true
+          bb integration-test --proxy || true
           pwd
           cat /home/runner/work/eca/eca/integration-test/out/tinyproxy.log
           cat /home/runner/work/eca/eca/integration-test/out/server.stderr.txt
