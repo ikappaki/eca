@@ -90,7 +90,7 @@
        :body (json/generate-string body)
        :throw-exceptions? false
        :async? true
-       :http-client http-client
+       :http-client client/*hato-http-client*
        :as (if on-stream :stream :json)}
       (fn [{:keys [status body]}]
         (try
