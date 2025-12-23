@@ -90,7 +90,7 @@
        :body (json/generate-string body)
        :throw-exceptions? false
        :async? true
-       :http-client client/*hato-http-client*
+       :http-client (client/merge-with-global-http-client http-client)
        :as (if on-stream :stream :json)}
       (fn [{:keys [status body]}]
         (try
@@ -304,7 +304,7 @@
               :code_verifier verifier}
         {:keys [status body]} (http/post
                                url
-                               {:http-client client/*hato-http-client*
+                               {:http-client (client/merge-with-global-http-client {})
                                 :headers {"Content-Type" "application/json"}
                                 :body (json/generate-string body)
                                 :as :json})]
@@ -323,7 +323,7 @@
               :client_id client-id}
         {:keys [status body]} (http/post
                                url
-                               {:http-client client/*hato-http-client*
+                               {:http-client (client/merge-with-global-http-client {})
                                 :headers {"Content-Type" "application/json"}
                                 :body (json/generate-string body)
                                 :throw-exceptions? false
@@ -344,7 +344,7 @@
   (let [url create-api-key-url
         {:keys [status body]} (http/post
                                url
-                               {:http-client client/*hato-http-client*
+                               {:http-client (client/merge-with-global-http-client {})
                                 :headers {"Authorization" (str "Bearer " access-token)
                                           "Content-Type" "application/x-www-form-urlencoded"
                                           "Accept" "application/json, text/plain, */*"}

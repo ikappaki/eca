@@ -21,7 +21,7 @@
     (let [rid (llm-util/gen-rid)
           {:keys [status body]} (http/get
                                  (format list-models-url api-url)
-                                 {:http-client client/*hato-http-client*
+                                 {:http-client (client/merge-with-global-http-client {})
                                   :throw-exceptions? false
                                   :as :json})]
       (if (= 200 status)
@@ -39,7 +39,7 @@
     (let [rid (llm-util/gen-rid)
           {:keys [status body]} (http/post
                                  (format show-model-url api-url)
-                                 {:http-client client/*hato-http-client*
+                                 {:http-client (client/merge-with-global-http-client {})
                                   :throw-exceptions? false
                                   :body (json/generate-string {:model model})
                                   :as :json})]
@@ -66,7 +66,7 @@
     (llm-util/log-request logger-tag rid url body {})
     @(http/post
       url
-      {:http-client client/*hato-http-client*
+      {:http-client (client/merge-with-global-http-client {})
        :body (json/generate-string body)
        :throw-exceptions? false
        :async? true

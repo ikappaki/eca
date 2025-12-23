@@ -2,6 +2,7 @@
   (:require
    [babashka.fs :as fs]
    [clojure.string :as string]
+   [eca.client-http :as client]
    [eca.config :as config]
    [eca.llm-providers.anthropic :as llm-providers.anthropic]
    [eca.llm-providers.azure]

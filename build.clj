@@ -25,18 +25,9 @@
 
 (def java-src-dirs ["src-java"])
 
-(defn compile-java [_opts]
-  (println "Compiling Java sources...")
-  (doseq [dir java-src-dirs]
-    (b/javac {:src-dirs [dir]
-              :class-dir class-dir
-              ;;:javac-opts ["-source" "11" "-target" "11"]
-              })))
-
 (defn ^:private aot-jar [opts]
   (clean opts)
   (println "Building uberjar...")
- (compile-java nil)
   (let [basis (b/create-basis (update basis :aliases concat (:extra-aliases opts)))
         src-dirs (into ["src" "resources"] (:extra-dirs opts))]
     (b/copy-dir {:src-dirs src-dirs

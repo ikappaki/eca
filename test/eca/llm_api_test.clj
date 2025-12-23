@@ -1,6 +1,7 @@
 (ns eca.llm-api-test
   (:require
    [clojure.test :refer [deftest is testing]]
+   [eca.client-test-helpers :refer [with-client-proxied *http-client-captures*]]
    [eca.config :as config]
    [eca.llm-api :as llm-api]
    [eca.secrets :as secrets]
@@ -60,3 +61,48 @@
       (let [db {:models {}}
             config {}]
         (is (= "anthropic/claude-sonnet-4.5" (llm-api/default-model db config)))))))
+
+(def config
+  {:config {:providers {"lmstudio"
+                        {:api "openai-chat",
+                         :url "http://localhost:1234",
+                         :completionUrlRelativePath "/v1/chat/completions",
+                         :httpClient {:version :http-1.1},
+                         :models {"ibm/granite-4-h-tiny" {}}}}}
+
+   :provider "lmstudio"
+   :model "ibm/granite-4-h-tiny"
+
+   :model-capabilities {:tools false,
+                        :reason? false,
+                        :web-search false,
+                        :model-name "ibm/granite-4-h-tiny"}
+   :sync? true})
+
+(deftest prompt-test
+  (testing "prompt"
+    (let [req* (atom nil)]
+
+      (with-client-proxied {}
+        (fn [req]
+          ;; capture the outgoing request
+          (reset! req* req)
+          ;; fake token endpoint response
+          {:status 200
+           :body {:usage {:prompt_tokens 5 :completion_tokens 2}
+                  :choices [{:message {:content "hi"
+                                       :reasoning_content "think more"}}]}})
+
+        (let [response (#'eca.llm-api/prompt!
+                        config)]
+          (is (= {:method "POST",
+                  :uri "/v1/chat/completions"}
+                 (select-keys @req* [:method :uri])))
+          (is (= [{:version :http-1.1}] (map #(dissoc % :proxy) @*http-client-captures*)))
+          (is (= {:usage {:input-tokens 5, :output-tokens 2, :input-cache-read-tokens nil},
+                  :tools-to-call (),
+                  :reason-text "think more",
+                  :reasoning-content "think more",
+                  :output-text "hi"}
+                 (select-keys response [:usage :tools-to-call :reason-text :reasoning-content :output-text]))))))))
+#_(prompt-test)

@@ -168,6 +168,9 @@
          (finally
            (.abort ^DefaultHttpProxyServer  (:px prx#)))))))
 
+(def ^:dynamic *http-client-captures*
+  "A record of all `eca.client-http/merge-with-global-http-client` merge requests results done during the call to `with-client-proxied` call."
+  nil)
 
 (defmacro with-client-proxied
   "Runs BODY with a temporary LittleProxy server active on a random local port,
@@ -177,6 +180,9 @@
   Starts a proxy using the provided request HANDLER-FN and optional OPTS. Ensures
   the proxy is shut down after BODY executes, and `eca.client-http/*hato-http-client*`
   is reset to nil.
+
+  During execution, any calls to `eca.client-http/merge-with-global-http-client`
+  are recorded in `*http-client-captures*` as a sequence of merged options maps.
 
   Accepts all OPTS supported by `hato.client-http/build-http-client`.
 
@@ -188,14 +194,22 @@
     :headers  - request headers as a map
     :body     - request body, JSON is automatically parsed into a map if applicable"
   [opts handler-fn & body]
-  
+
   `(with-proxy ~opts
      ~handler-fn
 
      (let [client# (client/hato-client-make (assoc ~opts :eca.client-http/proxy-http {:host *proxy-host* :port *proxy-port*}))]
        (try
          (alter-var-root #'client/*hato-http-client* (constantly client#))
-         ~@body
+         (let [merges*# (atom [])
+               merge-fn# client/merge-with-global-http-client]
+           (with-redefs [client/merge-with-global-http-client
+                         (fn [& args#]
+                           (let [result# (apply merge-fn# args#)]
+                             (swap! merges*# conj result#)
+                             result#))]
+             (binding [*http-client-captures* merges*#]
+               ~@body)))
          (finally
            (alter-var-root #'client/*hato-http-client* (constantly nil)))))))
 

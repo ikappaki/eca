@@ -8,7 +8,7 @@
 (deftest base-responses-req-test
   (testing "that responses request can be routed through the http proxy"
     (let [req* (atom nil)]
-      (with-client-proxied {}
+      (with-client-proxied {:version :http-2}
         (fn [req]
           ;; capture request made by the client
           (reset! req* req)
@@ -26,6 +26,7 @@
                          :body body
                          :url-relative-path "/v1/responses"})]
 
+          (println :req @req*)
           ;; request sent through proxy
           (is (= {:method "POST"
                   :uri "/v1/responses"

@@ -20,7 +20,7 @@
 (defn ^:private oauth-url []
   (let [{:keys [body]} (http/post
                         oauth-login-device-url
-                        {:http-client client/*hato-http-client*
+                        {:http-client (client/merge-with-global-http-client {})
                          :headers (auth-headers)
                          :body (json/generate-string {:client_id client-id
                                                       :scope "read:user"})
@@ -35,7 +35,7 @@
 (defn ^:private oauth-access-token [device-code]
   (let [{:keys [status body]} (http/post
                                oauth-login-device-code-url
-                               {:http-client client/*hato-http-client*
+                               {:http-client (client/merge-with-global-http-client {})
                                 :headers (auth-headers)
                                 :body (json/generate-string {:client_id client-id
                                                              :device_code device-code
@@ -54,7 +54,7 @@
 (defn ^:private oauth-renew-token [access-token]
   (let [{:keys [status body]} (http/get
                                oauth-copilot-token-url
-                               {:http-client client/*hato-http-client*
+                               {:http-client (client/merge-with-global-http-client {})
                                 :headers (merge (auth-headers)
                                                 {"authorization" (str "token " access-token)})
                                 :throw-exceptions? false

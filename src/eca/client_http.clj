@@ -66,9 +66,15 @@
       (assoc :authenticator proxy-creds))))
 
 (def ^:dynamic *hato-http-client*
-  "the Hato HTTP client used throughout the application for making HTTP
-  requests"  
+  "Global Hato HTTP client used throughout the application for making
+  HTTP requests"
   nil)
+
+(defn merge-with-global-http-client
+  "Merge the given Hato HTTP client options with the global
+  `*hato-http-client*` and return the result."
+  [http-client]
+  (merge *hato-http-client* http-client))
 
 (defn hato-client-global-setup!
   "Builds the Hato HTTP client used throughout the application for making

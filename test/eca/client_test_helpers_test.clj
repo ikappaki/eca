@@ -450,7 +450,19 @@
       (let [resp (hato/get "http://example.com/test"
                            {:http-client client/*hato-http-client*})]
         (is (= 200 (:status resp)))
-        (is (= "/test" (:body resp)))))))
+        (is (= "/test" (:body resp))))))
+
+  (testing "Captures all calls to `merge-with-global-http-client` during BODY"
+    (cth/with-client-proxied {:abc 52}
+      (fn [_] {:status 200 :body "ok"})
+        ;; Make some merge calls inside BODY
+      (client/merge-with-global-http-client {:foo "bar"})
+      (client/merge-with-global-http-client {:baz 42})
+        ;; Assert that all merged results were captured
+      (let [captures @cth/*http-client-captures*]
+        (is (= 2 (count captures)))
+        (is (= {:foo "bar" :abc 52} (dissoc (first captures) :proxy)))
+        (is (= {:baz 42 :abc 52} (dissoc (second captures) :proxy)))))))
 #_(with-client-proxied-test)
 
   
