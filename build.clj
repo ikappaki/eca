@@ -22,9 +22,6 @@
 (defn clean [_]
   (b/delete {:path "target"}))
 
-
-(def java-src-dirs ["src-java"])
-
 (defn ^:private aot-jar [opts]
   (clean opts)
   (println "Building uberjar...")
@@ -35,8 +32,7 @@
     (b/compile-clj {:basis basis
                     :src-dirs src-dirs
                     :java-opts ["-server"]
-                    :class-dir class-dir
-                    :compile-namespaces ['eca.AuthShim]})
+                    :class-dir class-dir})
     (b/uber {:class-dir class-dir
              :uber-file file
              :main 'eca.main

@@ -78,7 +78,7 @@ jobs:
         run: |
           sudo apt-get update -y -qq
           sudo apt-get install -y -qq tinyproxy
-          
+
       - name: Install clojure build tools
         uses: DeLaGuardo/setup-clojure@master
         with:
@@ -162,7 +162,6 @@ jobs:
           bb: '1.12.200'
 
       - name: Install tinyproxy
-        if: "startsWith (matrix.os, 'ubuntu')"
         run: |
           sudo apt-get update -y -qq
           sudo apt-get install -y -qq tinyproxy
@@ -178,14 +177,14 @@ jobs:
       - name: Run integration tests
         run: bb integration-test --proxy
 
-  # nix-build:
-  #   needs: unit-test
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v5
-  #     - uses: cachix/install-nix-action@v31
-  #     - run: nix develop --command deps-lock-update
-  #     - run: |
-  #         echo "checking if deps-lock.json is up to date"
-  #         git diff --exit-code
-  #     - run: nix build
+  nix-build:
+    needs: unit-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: cachix/install-nix-action@v31
+      - run: nix develop --command deps-lock-update
+      - run: |
+          echo "checking if deps-lock.json is up to date"
+          git diff --exit-code
+      - run: nix build

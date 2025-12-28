@@ -1,4 +1,4 @@
-{:paths ["src" "resources" "target/classes"]
+{:paths ["src" "resources"]
  :deps {org.clojure/clojure {:mvn/version "1.12.2"}
         org.clojure/core.async {:mvn/version "1.8.741"}
         org.babashka/cli {:mvn/version "0.8.65"}
@@ -43,8 +43,7 @@
                     ;; proxy with basic authentication scheme.
                     "-Djdk.http.auth.tunneling.disabledSchemes="]
          :extra-paths ["test"]
-         :main-opts ["-m" "kaocha.runner"]
-         }
+         :main-opts ["-m" "kaocha.runner"]}
   :build {:extra-paths ["resources"]
           :extra-deps {babashka/fs {:mvn/version "0.5.22"}
                        babashka/process {:mvn/version "0.6.23"}}
