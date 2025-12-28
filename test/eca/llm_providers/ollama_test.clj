@@ -7,7 +7,7 @@
    [matcher-combinators.test :refer [match?]]))
 
 (deftest list-models-test
-  (testing "that Ollama list-models fetches models from the API"
+  (testing "fetches available Ollama models"
     (let [req* (atom nil)
           fake-api-url "http://localhost:99"
           fake-response {:status 200
@@ -28,7 +28,7 @@
           (is (= [{:name "model-a"} {:name "model-b"}] result)))))))
 
 (deftest model-capabilities-test
-  (testing "that Ollama model-capabilities fetches capabilities from the API"
+  (testing "fetches capabilities for a specific Ollama model"
     (let [req* (atom nil)
           fake-api-url "http://localhost:99"
           fake-model "test-model"
@@ -37,7 +37,6 @@
 
       (with-client-proxied {}
         (fn [req]
-          ;; capture outgoing request
           (reset! req* req)
           fake-response)
 
@@ -53,11 +52,10 @@
                  (:body @req*))
               "Outgoing payload should contain the model")
 
-          ;; response parsing
           (is (= ["chat" "completion"] result)))))))
 
 (deftest base-chat-request-test
-  (testing "that Ollama base-chat-request! sends request and parses JSON response"
+  (testing "sends Ollama chat request and extracts output text"
     (let [req* (atom nil)
           fake-url "http://localhost:99/api/chat"
           rid "test-rid"
@@ -67,7 +65,6 @@
 
       (with-client-proxied {}
         (fn [req]
-          ;; capture the outgoing request
           (reset! req* req)
           fake-response)
 
@@ -81,7 +78,6 @@
                   :uri    "/api/chat"}
                  (select-keys @req* [:method :uri])))
 
-          ;; response parsing
           (is (= {:output-text "Hello world"} result)))))))
 
 (deftest ->normalize-messages-test

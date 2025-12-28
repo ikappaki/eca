@@ -7,10 +7,9 @@
    [matcher-combinators.test :refer [match?]]))
 
 (deftest base-request-test
-  (testing "that base-request! can be routed through the http proxy"
+  (testing "constructs an Anthropics API request and extracts completion text"
     (let [req* (atom nil)
           fake-response {:content [{:text "Hello from Anthropics proxy!"}]}]
-
       (with-client-proxied {}
         (fn [req]
           (reset! req* req)
@@ -37,10 +36,9 @@
                  (select-keys response [:output-text]))))))))
 
 (deftest oauth-authorize-test
-  (testing "that Anthropic OAuth token exchange is routed through the http proxy"
+  (testing "exchanges an OAuth code for tokens and returns refresh/access tokens with expiry"
     (let [req* (atom nil)
           now-seconds (quot (System/currentTimeMillis) 1000)]
-
       (with-client-proxied {}
         (fn [req]
           (reset! req* req)
@@ -78,10 +76,9 @@
               "expires-at should be computed relative to current time"))))))
 
 (deftest oauth-refresh-test
-  (testing "that Anthropic OAuth refresh is routed through the http proxy"
+  (testing "refreshes an OAuth token and returns new refresh/access tokens with expiry"
     (let [req* (atom nil)
           now-seconds (quot (System/currentTimeMillis) 1000)]
-
       (with-client-proxied {}
         (fn [req]
           (reset! req* req)
@@ -113,9 +110,8 @@
               "expires-at should be computed relative to current time"))))))
 
 (deftest create-api-key-test
-  (testing "that Anthropic create-api-key is routed through the http proxy"
+  (testing "creates a new API key and sets the appropriate authorization headers"
     (let [req* (atom nil)]
-
       (with-client-proxied {}
         (fn [req]
           (reset! req* req)

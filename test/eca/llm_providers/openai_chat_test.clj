@@ -9,7 +9,7 @@
 (def thinking-end-tag "</think>")
 
 (deftest base-chat-req-test
-  (testing "that req can be routed through the http proxy"
+  (testing "builds a chat request and extracts assistant output text"
     (let [req* (atom nil)]
       (with-client-proxied {}
         (fn [req]

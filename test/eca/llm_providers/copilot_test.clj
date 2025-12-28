@@ -5,7 +5,7 @@
    [eca.llm-providers.copilot :as llm-providers.copilot]))
 
 (deftest oauth-url-test
-  (testing "that GitHub device OAuth request is routed through the http proxy"
+  (testing "constructs GitHub device OAuth request and parses key response fields"
     (let [req* (atom nil)]
 
       (with-client-proxied {}
@@ -38,14 +38,12 @@
                  result)))))))
 
 (deftest oauth-access-token-test
-  (testing "that GitHub device access-token exchange is routed through the http proxy"
+  (testing "builds device access-token request and parses access token"
     (let [req* (atom nil)]
 
       (with-client-proxied {}
         (fn [req]
-          ;; capture outgoing request
           (reset! req* req)
-          ;; fake access-token response
           {:status 200
            :body {:access_token "gh-access-token"}})
 
@@ -70,14 +68,12 @@
           (is (= "gh-access-token" result)))))))
 
 (deftest oauth-renew-token-test
-  (testing "that GitHub Copilot OAuth token renewal is routed through the http proxy"
+  (testing "sends token renewal request and extracts API key and expiry"
     (let [req* (atom nil)]
 
       (with-client-proxied {}
         (fn [req]
-          ;; capture outgoing request
           (reset! req* req)
-          ;; fake token renewal response
           {:status 200
            :body {:token      "copilot-api-key"
                   :expires_at 9999999999}})

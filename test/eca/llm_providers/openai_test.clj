@@ -6,11 +6,10 @@
    [matcher-combinators.test :refer [match?]]))
 
 (deftest base-responses-req-test
-  (testing "that responses request can be routed through the http proxy"
+  (testing "sends a responses request and extracts output text"
     (let [req* (atom nil)]
       (with-client-proxied {:version :http-2}
         (fn [req]
-          ;; capture request made by the client
           (reset! req* req)
           ;; fake a successful non-stream JSON response
           {:status 200
@@ -26,7 +25,6 @@
                          :body body
                          :url-relative-path "/v1/responses"})]
 
-          ;; request sent through proxy
           (is (= {:method "POST"
                   :uri "/v1/responses"
                   :body body}

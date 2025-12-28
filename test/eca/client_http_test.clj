@@ -172,28 +172,28 @@
             (is (= "proxied:/test" (:body resp))))
 
           (finally
-            (alter-var-root #'client/*hato-http-client* (constantly nil))))))
+            (alter-var-root #'client/*hato-http-client* (constantly nil)))))))
 
-    (testing "Hato uses an HTTPS system proxy through *hato-http-client*"
-      (let [req* (atom nil)]
-        (with-proxy {}
-          (fn [req]
-            (reset! req* req)
-            {:status 200
-             :body (:uri req)})
+  (testing "Hato uses an HTTPS system proxy through *hato-http-client*"
+    (let [req* (atom nil)]
+      (with-proxy {}
+        (fn [req]
+          (reset! req* req)
+          {:status 200
+           :body (:uri req)})
 
-          (with-redefs [config/get-env (fn [env]
-                                         (case env
-                                           "https_proxy" (str "http://" *proxy-host* ":" *proxy-port*)
-                                           nil))]
-            (try
-              (client/hato-client-global-setup! {:timeout 1000})
+        (with-redefs [config/get-env (fn [env]
+                                       (case env
+                                         "https_proxy" (str "http://" *proxy-host* ":" *proxy-port*)
+                                         nil))]
+          (try
+            (client/hato-client-global-setup! {:timeout 1000})
 
-              (is (thrown-with-msg? ;; expected as we only testing rerouting through proxy
-                   Exception
-                   #"Unrecognized SSL message, plaintext connection?" (hato/get "https://localhost/test" {:http-client client/*hato-http-client*})))
-              (is (= {:method "CONNECT" :uri "localhost:443"} (select-keys @req* [:method :uri])))
+            (is (thrown-with-msg? ;; expected as we only testing rerouting through proxy
+                 Exception
+                 #"Unrecognized SSL message, plaintext connection?" (hato/get "https://localhost/test" {:http-client client/*hato-http-client*})))
+            (is (= {:method "CONNECT" :uri "localhost:443"} (select-keys @req* [:method :uri])))
 
-              (finally
-                (alter-var-root #'client/*hato-http-client* (constantly nil))))))))))
+            (finally
+              (alter-var-root #'client/*hato-http-client* (constantly nil)))))))))
 #_(hato-client-global-setup-tests)
