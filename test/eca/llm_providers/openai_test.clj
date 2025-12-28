@@ -15,7 +15,7 @@
           ;; fake a successful non-stream JSON response
           {:status 200
            :body {:output [{:content [{:text "Hello from responses proxy!"}]}]}})
-        
+
         (let [body {:model "mymodel"
                     :input "hi"
                     :stream false}
@@ -26,7 +26,6 @@
                          :body body
                          :url-relative-path "/v1/responses"})]
 
-          (println :req @req*)
           ;; request sent through proxy
           (is (= {:method "POST"
                   :uri "/v1/responses"
@@ -36,7 +35,6 @@
           ;; parsed response
           (is (= {:output-text "Hello from responses proxy!"}
                  (select-keys response [:output-text]))))))))
-#_(base-responses-req-test)
 
 (deftest oauth-authorize-test
   (testing "that OAuth token exchange is routed through the http proxy"
@@ -79,7 +77,6 @@
           ;; expires-at should be > now
           (is (> (:expires-at result) now-seconds)
               "expires-at should be computed relative to current time"))))))
-#_(oauth-authorize-test)
 
 (deftest ->normalize-messages-test
   (testing "no previous history"

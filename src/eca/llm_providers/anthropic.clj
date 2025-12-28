@@ -304,9 +304,9 @@
               :code_verifier verifier}
         {:keys [status body]} (http/post
                                url
-                               {:http-client (client/merge-with-global-http-client {})
-                                :headers {"Content-Type" "application/json"}
+                               {:headers {"Content-Type" "application/json"}
                                 :body (json/generate-string body)
+                                :http-client (client/merge-with-global-http-client {})
                                 :as :json})]
     (if (= 200 status)
       {:refresh-token (:refresh_token body)
@@ -323,10 +323,10 @@
               :client_id client-id}
         {:keys [status body]} (http/post
                                url
-                               {:http-client (client/merge-with-global-http-client {})
-                                :headers {"Content-Type" "application/json"}
+                               {:headers {"Content-Type" "application/json"}
                                 :body (json/generate-string body)
                                 :throw-exceptions? false
+                                :http-client (client/merge-with-global-http-client {})
                                 :as :json})]
     (if (= 200 status)
       {:refresh-token (:refresh_token body)
@@ -344,10 +344,10 @@
   (let [url create-api-key-url
         {:keys [status body]} (http/post
                                url
-                               {:http-client (client/merge-with-global-http-client {})
-                                :headers {"Authorization" (str "Bearer " access-token)
+                               {:headers {"Authorization" (str "Bearer " access-token)
                                           "Content-Type" "application/x-www-form-urlencoded"
                                           "Accept" "application/json, text/plain, */*"}
+                                :http-client (client/merge-with-global-http-client {})
                                 :as :json})]
     (if (= 200 status)
       (let [raw-key (:raw_key body)]

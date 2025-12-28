@@ -25,10 +25,7 @@
     (with-redefs [config/get-env (fn [k] (case k "HTTP_PROXY" "http://uc-http"
                                                "https_proxy" "https://lc-https" "HTTPS_PROXY" "https://uc-https"
                                                nil))]
-      (is (= (p/proxy-urls-system-env-get) {:http "http://uc-http" :https "https://lc-https"}))))
-;;
-)
-#_(proxy-urls-system-env-get-tests)
+      (is (= (p/proxy-urls-system-env-get) {:http "http://uc-http" :https "https://lc-https"})))))
 
 (deftest parse-proxy-url-tests
   (testing "Parses full URL with scheme, host, port, username, and password"
@@ -67,11 +64,7 @@
 
   (testing "Handles URLs with unusual but valid characters in host or user info"
     (is (= (p/parse-proxy-url "http://u_ser:pa-ss@sub.example.com:8080")
-           {:host "sub.example.com" :port 8080 :username "u_ser" :password "pa-ss"})))
-;;
-  )
-#_(parse-proxy-url-tests)
-
+           {:host "sub.example.com" :port 8080 :username "u_ser" :password "pa-ss"}))))
 
 (deftest proxy-urls-parse-tests
   (testing "Parses both :http and :https URLs correctly"
@@ -99,7 +92,6 @@
       (is (= (p/proxy-urls-parse urls)
              {:http  {:host "http.com" :port 80 :username nil :password nil}
               :https {:host "https.com" :port 443 :username nil :password nil}})))))
-#_(proxy-urls-parse-tests)
 
 (deftest env-proxy-urls-parse-tests
   (testing "Parses both HTTP and HTTPS proxy environment variables correctly"
@@ -122,7 +114,4 @@
       (is (= (p/env-proxy-urls-parse)
              {:http  {:host "only-http.com" :port 80 :username nil :password nil}
               :https nil})))))
-#_(env-proxy-urls-parse-tests)
-
-
 

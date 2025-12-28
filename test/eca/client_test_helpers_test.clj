@@ -1,19 +1,18 @@
 (ns eca.client-test-helpers-test
   (:require
-   [clojure.test :refer [deftest is testing]]
    [cheshire.core :as json]
    [clojure.string :as str]
+   [clojure.test :refer [deftest is testing]]
    [eca.client-http :as client]
    [eca.client-test-helpers :as cth]
    [hato.client :as hato])
-  (:import [io.netty.handler.codec.http HttpMethod DefaultHttpRequest DefaultFullHttpRequest DefaultFullHttpResponse HttpVersion]
-           [org.littleshoot.proxy.impl  DefaultHttpProxyServer]
-           [io.netty.buffer Unpooled]
+  (:import [io.netty.buffer Unpooled]
+           [io.netty.handler.codec.http DefaultFullHttpRequest DefaultFullHttpResponse DefaultHttpRequest HttpMethod HttpVersion]
+           [java.io IOException]
+           [java.net Authenticator InetSocketAddress PasswordAuthentication ProxySelector URI]
+           [java.net.http HttpClient HttpRequest HttpRequest$BodyPublishers HttpResponse$BodyHandlers]
            [java.nio.charset StandardCharsets]
-           [java.net Authenticator PasswordAuthentication]
-           [java.net.http  HttpClient HttpRequest HttpRequest$BodyPublishers HttpResponse$BodyHandlers]
-           [java.net URI ProxySelector InetSocketAddress]
-           [java.io IOException]))
+           [org.littleshoot.proxy.impl  DefaultHttpProxyServer]))
 
 (deftest source-handler-tests
   (testing "successful plain text request with plain text response"
@@ -52,7 +51,7 @@
           content   (Unpooled/copiedBuffer "ignored" StandardCharsets/UTF_8)
           req       (DefaultFullHttpRequest.
                      HttpVersion/HTTP_1_1 HttpMethod/GET "/json" content)
-          
+
           ^DefaultFullHttpResponse resp (.proxyToServerRequest filters req)
           body      (.toString (.content resp) StandardCharsets/UTF_8)]
 
@@ -97,7 +96,7 @@
                      HttpVersion/HTTP_1_1 HttpMethod/POST "/fail" content)
           ^DefaultFullHttpResponse resp      (.proxyToServerRequest filters req)
           body      (.toString (.content resp) StandardCharsets/UTF_8)]
-      
+
       ;; The proxy should return 400 and include the error message
       (is (= 400 (.code (.getStatus resp))))
       (is (clojure.string/includes? body "handler failure"))))
@@ -113,10 +112,7 @@
 
       ;; The proxy should return 400 with the dev error message
       (is (= 400 (.code (.getStatus resp))))
-      (is (clojure.string/includes? body "expected FullHttpRequest"))))  
-  )
-#_(source-handler-test)
-
+      (is (clojure.string/includes? body "expected FullHttpRequest")))))
 
 (deftest little-proxy-interceptor-make-test
   (testing "intercepting simple GET request via LittleProxy"
@@ -144,9 +140,7 @@
           (is (= "/test" (:uri @handler-called)))
           (is (= "GET" (:method @handler-called))))
         (finally
-          (.abort ^DefaultHttpProxyServer (:px prx)))))
-    ;;
-    )
+          (.abort ^DefaultHttpProxyServer (:px prx))))))
 
   (testing "intercepting simple POST request via LittleProxy"
     (let [handler-called (atom nil)
@@ -154,12 +148,10 @@
                        (reset! handler-called req)
                        {:status 201
                         :body {:msg "created"}})
-          ;; start proxy
           prx (cth/little-proxy-interceptor-make handler-fn)
           prx-host (:host prx)
           prx-port (:port prx)]
       (try
-        ;; configure HttpClient
         (let [client (-> (HttpClient/newBuilder)
                          (.proxy (ProxySelector/of (InetSocketAddress. ^String prx-host ^long prx-port)))
                          (.build))
@@ -172,10 +164,8 @@
               response (.send client request (HttpResponse$BodyHandlers/ofString))
               body-str (.body response)
               body-map (json/parse-string body-str true)]
-          ;; assertions
           (is (= 201 (.statusCode response)))
           (is (= {:msg "created"} body-map))
-          ;; verify handler received request
           (is (= "/create" (:uri @handler-called)))
           (is (= "POST" (:method @handler-called)))
           (is (= {:foo "bar"} (:body @handler-called))))
@@ -188,7 +178,6 @@
           ^String prx-host (:host prx)
           ^long prx-port (:port prx)]
       (try
-        ;; configure HttpClient
         (let [client (-> (HttpClient/newBuilder)
                          (.proxy (ProxySelector/of (InetSocketAddress. prx-host prx-port)))
                          (.build))
@@ -200,7 +189,6 @@
                           (.build))
               response (.send client request (HttpResponse$BodyHandlers/ofString))
               body-str (.body response)]
-          ;; assertions
           (is (= 400 (.statusCode response)))
           (is (clojure.string/includes? body-str "handler failure")))
         (finally
@@ -220,20 +208,18 @@
                          (.proxy (ProxySelector/of
                                   (InetSocketAddress. host port)))
                          (.build))
-
-            ;; HTTPS target
               request (-> (HttpRequest/newBuilder)
                           (.uri (URI/create "https://localhost/"))
                           (.GET)
                           (.build))]
 
-        ;; We don't care if HTTPS fails after tunneling,
-        ;; we only care that CONNECT hit the proxy.
+          ;; We don't care if HTTPS fails after tunneling,
+          ;; we only care that CONNECT hit the proxy.
           (try
             (.send client request (HttpResponse$BodyHandlers/ofString))
             (catch Exception _))
 
-        ;; Confirm CONNECT request observed
+          ;; Confirm CONNECT request observed
           (is (= "CONNECT" (:method @req*))))
 
         (finally
@@ -252,7 +238,7 @@
       (try
         (let [client (-> (HttpClient/newBuilder)
                          (.proxy (ProxySelector/of (InetSocketAddress. prx-host prx-port)))
-                         (.authenticator (clojure.core/proxy [Authenticator] []
+                         (.authenticator (proxy [Authenticator] []
                                            (getPasswordAuthentication []
                                              (PasswordAuthentication. username (char-array password)))))
                          (.build))
@@ -280,7 +266,7 @@
         ;; HttpClient supplies wrong creds
         (let [client (-> (HttpClient/newBuilder)
                          (.proxy (ProxySelector/of (InetSocketAddress. prx-host prx-port)))
-                         (.authenticator (clojure.core/proxy [Authenticator] []
+                         (.authenticator (proxy [Authenticator] []
                                            (getPasswordAuthentication []
                                              (PasswordAuthentication. "wrong" (char-array "creds")))))
                          (.build))
@@ -344,19 +330,16 @@
                       (.uri (URI/create "https://localhost/x"))
                       (.GET)
                       (.build))]
-        ;; We don't care if HTTPS fails after tunneling,
-        ;; we only care that CONNECT hit the proxy.
+          ;; We don't care if HTTPS fails after tunneling,
+          ;; we only care that CONNECT hit the proxy.
           (try
             (.send client req (HttpResponse$BodyHandlers/ofString))
             (catch Exception _))
 
-        ;; Confirm CONNECT request observed
+          ;; Confirm CONNECT request observed
           (is (= "CONNECT" (:method @req*))))
         (finally
-          (.abort ^DefaultHttpProxyServer (:px prx))))))
-;;
-  )
-#_(little-proxy-interceptor-make-test)
+          (.abort ^DefaultHttpProxyServer (:px prx)))))))
 
 (deftest with-proxy-test
   (testing "can http post to the proxy and get a successful response"
@@ -393,11 +376,9 @@
             resp (.send client req (HttpResponse$BodyHandlers/ofString))]
 
         (is (= 400 (.statusCode resp)))
-        (is (clojure.string/includes? (.body resp) "boom")))))
+        (is (clojure.string/includes? (.body resp) "boom"))))))
 
-
-
-  (deftest with-proxy-authentication-tests
+(deftest with-proxy-authentication-tests
   (testing "Requires username and password when proxy authentication is enabled"
     (cth/with-proxy {:user "user1" :pass "secret"}
       (fn [_] {:status 200 :body "ok"})
@@ -429,10 +410,6 @@
             resp (.send client req (HttpResponse$BodyHandlers/ofString))]
         (is (not= 200 (.statusCode resp)))
         (is (clojure.string/includes? (.body resp) "Proxy Authentication"))))))
-;;
-  )
-#_(with-proxy-test)
-
 
 (deftest with-client-proxied-test
   (testing "Restores `eca.client-http/*hato-http-client*` to nil after BODY executes"
@@ -463,7 +440,4 @@
         (is (= 2 (count captures)))
         (is (= {:foo "bar" :abc 52} (dissoc (first captures) :proxy)))
         (is (= {:baz 42 :abc 52} (dissoc (second captures) :proxy)))))))
-#_(with-client-proxied-test)
-
-  
 

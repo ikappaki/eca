@@ -1,8 +1,8 @@
 (ns eca.client-http-test
   (:require [clojure.test :refer [deftest is testing]]
             [eca.client-http :as client]
-            [eca.config :as config]
             [eca.client-test-helpers :refer [with-proxy *proxy-host* *proxy-port*]]
+            [eca.config :as config]
             [hato.client :as hato])
   (:import [java.io IOException]))
 
@@ -105,8 +105,8 @@
                         :port *proxy-port*
                         :username "wrong-user"
                         :password "wrong-pass"}})]
-        ;; it throws a very intrinsic exception when proxy authentication fails using https BASIC authentication:
-        ;;   Caused by: java.lang.NullPointerException: Cannot invoke "jdk.internal.net.http.ExchangeImpl.cancel(java.io.IOException)" because "exch.exchImpl" is null ...
+          ;; it throws a very intrinsic exception when proxy authentication fails using https BASIC authentication:
+          ;;   Caused by: java.lang.NullPointerException: Cannot invoke "jdk.internal.net.http.ExchangeImpl.cancel(java.io.IOException)" because "exch.exchImpl" is null ...
           (is (thrown? ;; expected as we only testing rerouting through proxy
                Exception
                (hato/post "https://localhost/fail-auth" {:http-client client})))
@@ -125,12 +125,12 @@
                        :eca.client-http/proxy-https
                        {:host *proxy-host* :port *proxy-port* :username "u" :password "p"}})]
 
-        ;; HTTP request uses proxy + creds
+          ;; HTTP request uses proxy + creds
           (let [resp (hato/post "http://localhost:99/http" {:http-client client})]
             (is (= 200 (:status resp)))
             (is (= "/http" (:body resp))))
 
-        ;; HTTPS request routes via CONNECT using same creds
+          ;; HTTPS request routes via CONNECT using same creds
           (is (thrown-with-msg?
                Exception
                #"Unrecognized SSL message, plaintext connection?"
@@ -149,11 +149,7 @@
             {:eca.client-http/proxy-http
              {:host *proxy-host* :port *proxy-port* :username "u1" :password "p1"}
              :eca.client-http/proxy-https
-             {:host *proxy-host* :port *proxy-port* :username "u2" :password "p2"}})))))
-
-;;
-  )
-#_(hato-client-make-test)
+             {:host *proxy-host* :port *proxy-port* :username "u2" :password "p2"}}))))))
 
 (deftest hato-client-global-setup-tests
   (testing "Hato uses a system proxy through *hato-http-client*"
@@ -179,7 +175,6 @@
             (alter-var-root #'client/*hato-http-client* (constantly nil))))))
 
     (testing "Hato uses an HTTPS system proxy through *hato-http-client*"
-
       (let [req* (atom nil)]
         (with-proxy {}
           (fn [req]

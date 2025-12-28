@@ -47,10 +47,7 @@
                   :body body}
                  (select-keys @req* [:method :uri :body])))
           (is (= {:output-text "Hello from proxy!"}
-                 (select-keys response [:output-text])))))))
-  ;;
-  )
-#_(base-chat-req-test)
+                 (select-keys response [:output-text]))))))))
 
 (deftest normalize-messages-test
   (testing "With tool_call history - assistant text and tool calls are merged"

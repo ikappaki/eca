@@ -20,27 +20,27 @@
 (defn ^:private oauth-url []
   (let [{:keys [body]} (http/post
                         oauth-login-device-url
-                        {:http-client (client/merge-with-global-http-client {})
-                         :headers (auth-headers)
+                        {:headers (auth-headers)
                          :body (json/generate-string {:client_id client-id
                                                       :scope "read:user"})
+                         :http-client (client/merge-with-global-http-client {})
                          :as :json})]
     {:user-code (:user_code body)
      :device-code (:device_code body)
      :url (:verification_uri body)}))
 
-(def ^:private oauth-login-device-code-url
-  "https://github.com/login/device/code")
+(def ^:private oauth-login-access-token-url
+  "https://github.com/login/oauth/access_token")
 
 (defn ^:private oauth-access-token [device-code]
   (let [{:keys [status body]} (http/post
-                               oauth-login-device-code-url
-                               {:http-client (client/merge-with-global-http-client {})
-                                :headers (auth-headers)
+                               oauth-login-access-token-url
+                               {:headers (auth-headers)
                                 :body (json/generate-string {:client_id client-id
                                                              :device_code device-code
                                                              :grant_type "urn:ietf:params:oauth:grant-type:device_code"})
                                 :throw-exceptions? false
+                                :http-client (client/merge-with-global-http-client {})
                                 :as :json})]
     (if (= 200 status)
       (:access_token body)
@@ -54,10 +54,10 @@
 (defn ^:private oauth-renew-token [access-token]
   (let [{:keys [status body]} (http/get
                                oauth-copilot-token-url
-                               {:http-client (client/merge-with-global-http-client {})
-                                :headers (merge (auth-headers)
+                               {:headers (merge (auth-headers)
                                                 {"authorization" (str "token " access-token)})
                                 :throw-exceptions? false
+                                :http-client (client/merge-with-global-http-client {})
                                 :as :json})]
     (if-let [token (:token body)]
       {:api-key token

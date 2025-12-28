@@ -83,7 +83,7 @@
   HATO-OPTS are the same options accepted by Hato's
   `hato.client-http/build-http-client`. In addition, if HTTP or HTTPS proxy
   settings are present in the environment
-  variables (`http_proxy`/`HTTP_PROXY` and `https_proxy`/`HTTPS_PROXY`), 
+  variables (`http_proxy`/`HTTP_PROXY` and `https_proxy`/`HTTPS_PROXY`),
   the corresponding proxy configuration is added to the build."
   [hato-opts]
   (let [{:keys [http https] :as _env-proxies} (proxy/env-proxy-urls-parse)

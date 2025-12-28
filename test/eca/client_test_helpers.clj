@@ -2,11 +2,11 @@
   (:require
    [cheshire.core :as json]
    [eca.client-http :as client])
-  (:import [io.netty.handler.codec.http HttpHeaders HttpResponseStatus FullHttpRequest DefaultFullHttpResponse HttpResponseStatus HttpVersion]
-           [org.littleshoot.proxy HttpFiltersAdapter ProxyAuthenticator HttpFiltersSource]
-           [org.littleshoot.proxy.impl  DefaultHttpProxyServer]
-           [io.netty.buffer Unpooled]
-           [java.nio.charset StandardCharsets]))
+  (:import [io.netty.buffer Unpooled]
+           [io.netty.handler.codec.http DefaultFullHttpResponse FullHttpRequest HttpHeaders HttpResponseStatus HttpResponseStatus HttpVersion]
+           [java.nio.charset StandardCharsets]
+           [org.littleshoot.proxy HttpFiltersAdapter HttpFiltersSource ProxyAuthenticator]
+           [org.littleshoot.proxy.impl DefaultHttpProxyServer]))
 
 (defn ^HttpFiltersSource proxy-filters-handler-make
   "Creates a LittleProxy `HttpFiltersSource` that intercepts HTTP requests,
@@ -28,16 +28,21 @@
   Buffer limits are set so the proxy can accept request bodies up to
   32 KB and does not buffer responses."
   [handler-fn]
-  (clojure.core/proxy [HttpFiltersSource] []
+  (proxy [HttpFiltersSource] []
+    (clientToProxyRequest [http-obj]
+      ;; always return nil to accept the request
+      ;; or you can normalize the URI here if you want
+      nil)
+
     (filterRequest [original-request ctx]
-      (clojure.core/proxy [HttpFiltersAdapter] [original-request]
+      (proxy [HttpFiltersAdapter] [original-request]
         (proxyToServerRequest [http-obj]
           (let [{:keys [response ^String error]}
                 (try
                   (if (instance? FullHttpRequest http-obj)
                     (let [req ^FullHttpRequest http-obj
                           headers-map (into {}
-                                            (for [^java.util.Map$Entry  h (.entries (.headers req))]
+                                            (for [^java.util.Map$Entry h (.entries (.headers req))]
                                               [(.getKey h) (.getValue h)]))
                           content-type (get headers-map "Content-Type")
                           body-str (.toString (.content req) StandardCharsets/UTF_8)
@@ -93,13 +98,12 @@
     (getMaximumRequestBufferSizeInBytes [] (* 1024 32))
     (getMaximumResponseBufferSizeInBytes [] 0)))
 
-
 (defn proxy-authenticator-make
   "Creates a LittleProxy ProxyAuthenticator that returns true if the
   provided USERNAME and PASSWORD match those of the incoming request,
   allowing it to authenticate."
   [username password]
-  (clojure.core/proxy [ProxyAuthenticator] []
+  (proxy [ProxyAuthenticator] []
     (authenticate [user pass]
       (and (= user username)
            (= pass password)))
@@ -142,8 +146,8 @@
 
   Starts a proxy using the provided request HANDLER-FN and optional
   OPTS, making its host and port available via the dynamic vars
-  *proxy-host* and *proxy-port*. Ensures the proxy is shut down after
-  BODY executes.
+  `*proxy-host*` and `*proxy-port*`. Ensures the proxy is shut down
+  after BODY executes.
 
   HANDLER-FN is a function that receives a normalized request map and
   returns a response map. The request map includes:
@@ -166,10 +170,12 @@
                    *proxy-port* prx-port#]
            ~@body)
          (finally
-           (.abort ^DefaultHttpProxyServer  (:px prx#)))))))
+           (.abort ^DefaultHttpProxyServer (:px prx#)))))))
 
 (def ^:dynamic *http-client-captures*
-  "A record of all `eca.client-http/merge-with-global-http-client` merge requests results done during the call to `with-client-proxied` call."
+  "A record of all `eca.client-http/merge-with-global-http-client` merge
+  requests results done during the call to `with-client-proxied`
+  call."
   nil)
 
 (defmacro with-client-proxied

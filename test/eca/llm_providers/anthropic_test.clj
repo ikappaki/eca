@@ -13,9 +13,7 @@
 
       (with-client-proxied {}
         (fn [req]
-          ;; capture request
           (reset! req* req)
-          ;; return fake 200 response
           {:status 200
            :body fake-response})
 
@@ -30,16 +28,13 @@
                          :url-relative-path "/v1/messages"
                          :auth-type :auth/key})]
 
-          ;; check that the request was sent correctly
           (is (= {:method "POST"
                   :uri "/v1/messages"
                   :body body}
                  (select-keys @req* [:method :uri :body])))
 
-          ;; check that the output-text was extracted correctly
           (is (= {:output-text "Hello from Anthropics proxy!"}
                  (select-keys response [:output-text]))))))))
-#_(base-request-test)
 
 (deftest oauth-authorize-test
   (testing "that Anthropic OAuth token exchange is routed through the http proxy"
@@ -48,9 +43,7 @@
 
       (with-client-proxied {}
         (fn [req]
-          ;; capture the outgoing request
           (reset! req* req)
-          ;; fake token endpoint response
           {:status 200
            :body {:refresh_token "r-token"
                   :access_token  "a-token"
@@ -64,7 +57,6 @@
                            (#'llm-providers.anthropic/oauth-authorize
                             raw-code verifier))]
 
-          ;; request validation
           (is (= {:method "POST"
                   :uri    "/v1/oauth/token"}
                  (select-keys @req* [:method :uri])))
@@ -78,14 +70,12 @@
                  (:body @req*))
               "Outgoing payload should match token-exchange fields")
 
-          ;; response parsing
           (is (= "r-token" (:refresh-token result)))
           (is (= "a-token" (:access-token result)))
 
           ;; expires-at should be > now
           (is (> (:expires-at result) now-seconds)
               "expires-at should be computed relative to current time"))))))
-#_(oauth-authorize-test)
 
 (deftest oauth-refresh-test
   (testing "that Anthropic OAuth refresh is routed through the http proxy"
@@ -94,9 +84,7 @@
 
       (with-client-proxied {}
         (fn [req]
-          ;; capture outgoing request
           (reset! req* req)
-          ;; fake refresh response
           {:status 200
            :body {:refresh_token "new-r-token"
                   :access_token  "new-a-token"
@@ -107,7 +95,6 @@
                                           "http://localhost:99/v1/oauth/token"]
                               (#'llm-providers.anthropic/oauth-refresh refresh-token))]
 
-          ;; request validation
           (is (= {:method "POST"
                   :uri    "/v1/oauth/token"}
                  (select-keys @req* [:method :uri])))
@@ -118,14 +105,12 @@
                  (:body @req*))
               "Outgoing payload should match refresh-token fields")
 
-          ;; response parsing
           (is (= "new-r-token" (:refresh-token result)))
           (is (= "new-a-token" (:access-token result)))
 
           ;; expires-at should be > now
           (is (> (:expires-at result) now-seconds)
               "expires-at should be computed relative to current time"))))))
-#_(oauth-refresh-test)
 
 (deftest create-api-key-test
   (testing "that Anthropic create-api-key is routed through the http proxy"
@@ -133,9 +118,7 @@
 
       (with-client-proxied {}
         (fn [req]
-          ;; capture outgoing request
           (reset! req* req)
-          ;; fake create key response
           {:status 200
            :body {:raw_key "sk-ant-test-key"}})
 
@@ -144,7 +127,6 @@
                                          "http://localhost:99/api/oauth/claude_cli/create_api_key"]
                              (#'llm-providers.anthropic/create-api-key access-token))]
 
-          ;; request validation
           (is (= {:method "POST"
                   :uri    "/api/oauth/claude_cli/create_api_key"}
                  (select-keys @req* [:method :uri])))
@@ -154,9 +136,7 @@
                   "Accept"        "application/json, text/plain, */*"}
                  (select-keys (:headers @req*) ["Authorization" "Content-Type" "Accept"]))
               "Authorization and content headers should be set")
-          ;; response parsing
           (is (= "sk-ant-test-key" result)))))))
-#_(create-api-key-test)
 
 (deftest ->normalize-messages-test
   (testing "no previous history"

@@ -16,20 +16,16 @@
 
       (with-client-proxied {}
         (fn [req]
-          ;; capture outgoing request
           (reset! req* req)
           fake-response)
 
         (let [result (#'eca.llm-providers.ollama/list-models {:api-url fake-api-url})]
-
-          ;; request validation
           (is (= {:method "GET"
                   :uri    "/api/tags"} ;; matches list-models-url "%s/api/tags"
                  (select-keys @req* [:method :uri])))
 
           ;; response parsing
           (is (= [{:name "model-a"} {:name "model-b"}] result)))))))
-#_(list-models-test)
 
 (deftest model-capabilities-test
   (testing "that Ollama model-capabilities fetches capabilities from the API"
@@ -59,7 +55,6 @@
 
           ;; response parsing
           (is (= ["chat" "completion"] result)))))))
-#_(model-capabilities-test)
 
 (deftest base-chat-request-test
   (testing "that Ollama base-chat-request! sends request and parses JSON response"
@@ -88,7 +83,6 @@
 
           ;; response parsing
           (is (= {:output-text "Hello world"} result)))))))
-#_(base-chat-request-test)
 
 (deftest ->normalize-messages-test
   (testing "no previous history"

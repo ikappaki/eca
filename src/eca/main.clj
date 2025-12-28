@@ -2,7 +2,6 @@
   (:refer-clojure :exclude [run!])
   (:gen-class)
   (:require
-   ;; [flow-storm.api :as fs-api]
    [babashka.cli :as cli]
    [borkdude.dynaload]
    [clojure.string :as string]
@@ -113,7 +112,6 @@
       (handle-action! action options))))
 
 (defn main [& args]
-  ;; (fs-api/local-connect)
   (let [{:keys [result-code message-fn]} (apply run! args)]
     (exit result-code (when message-fn (message-fn)))))
 
