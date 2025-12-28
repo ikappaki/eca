@@ -16,19 +16,19 @@
       (let [client (client/hato-client-make {:eca.client-http/proxy-http {:host *proxy-host*
                                                                           :port *proxy-port*}})
             response (hato/post
-                      "http://test.me/now"
+                      "http://localhost:99/now"
                       {:http-client client})]
-        (is (= {:uri "http://test.me/now",
+        (is (= {:uri "http://localhost:99/now",
                 :status 200,
                 :body "hello",
                 :version :http-1.1
                 :request {:user-info nil,
                           :http-client {},
                           :headers {"accept-encoding" "gzip, deflate"},
-                          :server-port nil,
-                          :url "http://test.me/now",
+                          :server-port 99,
+                          :url "http://localhost:99/now",
                           :uri "/now",
-                          :server-name "test.me",
+                          :server-name "localhost",
                           :query-string nil,
                           :scheme :http,
                           :request-method :post}}
@@ -47,22 +47,22 @@
         (let [client (client/hato-client-make {:eca.client-http/proxy-http {:host *proxy-host* :port *proxy-port*}
                                                :eca.client-http/proxy-https {:host *proxy-host* :port *proxy-port*}})]
           ;; HTTP request
-          (let [http-resp (hato/post "http://example.com/http" {:http-client client})]
+          (let [http-resp (hato/post "http://localhost:99/http" {:http-client client})]
             (is (= 200 (:status http-resp)))
             (is (= "/http" (:body http-resp))))
 
           ;; HTTPS request
           (is (thrown-with-msg? ;; expected as we only testing rerouting through proxy
                Exception
-               #"Unrecognized SSL message, plaintext connection?" (hato/post "https://example.com/https" {:http-client client})))
+               #"Unrecognized SSL message, plaintext connection?" (hato/post "https://localhost/https" {:http-client client})))
           (let [req2 (second @reqs*)]
-            (is (= {:method "CONNECT" :uri "example.com:443"} (select-keys  req2 [:method :uri]))))))))
+            (is (= {:method "CONNECT" :uri "localhost:443"} (select-keys  req2 [:method :uri]))))))))
 
   (testing "Includes an authenticator when proxy username and password are provided"
     (with-proxy {:user "u" :pass "p"}
       (fn [req] {:status 200 :body (:uri req)})
       (let [client (client/hato-client-make {:eca.client-http/proxy-http {:host *proxy-host* :port *proxy-port* :username "u" :password "p"}})
-            response (hato/post "http://example.com/auth" {:http-client client})]
+            response (hato/post "http://localhost:99/auth" {:http-client client})]
         (is (= 200 (:status response)))
         (is (= "/auth" (:body response))))))
 
@@ -75,8 +75,8 @@
         (let [client (client/hato-client-make {:eca.client-http/proxy-https {:host *proxy-host* :port *proxy-port* :username "us" :password "ps"}})]
           (is (thrown-with-msg?
                Exception
-               #"Unrecognized SSL message, plaintext connection?" (hato/post "https://example.com/auth" {:http-client client})))
-          (is (= {:method "CONNECT" :uri "example.com:443"} (select-keys @req* [:method :uri])) @req*)))))
+               #"Unrecognized SSL message, plaintext connection?" (hato/post "https://localhost/auth" {:http-client client})))
+          (is (= {:method "CONNECT" :uri "localhost:443"} (select-keys @req* [:method :uri])) @req*)))))
 
   (testing "Rejects requests when proxy username and password are incorrect"
     (with-proxy {:user "correct-user" :pass "correct-pass"}
@@ -91,7 +91,7 @@
         (is (thrown-with-msg? ;; expected as we only testing rerouting through proxy
              IOException
              #"too many authentication attempts"
-             (hato/post "http://example.com/fail-auth" {:http-client client}))))))
+             (hato/post "http://localhost:99/fail-auth" {:http-client client}))))))
 
   (testing "Rejects requests when proxy username and password are incorrect (HTTPS)"
     (let [req* (atom nil)]
@@ -109,7 +109,7 @@
         ;;   Caused by: java.lang.NullPointerException: Cannot invoke "jdk.internal.net.http.ExchangeImpl.cancel(java.io.IOException)" because "exch.exchImpl" is null ...
           (is (thrown? ;; expected as we only testing rerouting through proxy
                Exception
-               (hato/post "https://example.com/fail-auth" {:http-client client})))
+               (hato/post "https://localhost/fail-auth" {:http-client client})))
           (is (nil? @req*))))))
 
   (testing "uses shared proxy credentials when both HTTP and HTTPS credentials match"
@@ -126,7 +126,7 @@
                        {:host *proxy-host* :port *proxy-port* :username "u" :password "p"}})]
 
         ;; HTTP request uses proxy + creds
-          (let [resp (hato/post "http://example.com/http" {:http-client client})]
+          (let [resp (hato/post "http://localhost:99/http" {:http-client client})]
             (is (= 200 (:status resp)))
             (is (= "/http" (:body resp))))
 
@@ -134,9 +134,9 @@
           (is (thrown-with-msg?
                Exception
                #"Unrecognized SSL message, plaintext connection?"
-               (hato/post "https://example.com/https" {:http-client client})))
+               (hato/post "https://localhost/https" {:http-client client})))
 
-          (is (= {:method "CONNECT" :uri "example.com:443"}
+          (is (= {:method "CONNECT" :uri "localhost:443"}
                  (select-keys (second @reqs*) [:method :uri])))))))
 
   (testing "rejects configuration when HTTP and HTTPS proxy credentials differ"
@@ -171,7 +171,7 @@
           (client/hato-client-global-setup! {:timeout 1000})
 
           ;; Make a request using the global client
-          (let [resp (hato/get "http://example.com/test" {:http-client client/*hato-http-client*})]
+          (let [resp (hato/get "http://localhost:99/test" {:http-client client/*hato-http-client*})]
             (is (= 200 (:status resp)))
             (is (= "proxied:/test" (:body resp))))
 
@@ -196,8 +196,8 @@
 
               (is (thrown-with-msg? ;; expected as we only testing rerouting through proxy
                    Exception
-                   #"Unrecognized SSL message, plaintext connection?" (hato/get "https://example.com/test" {:http-client client/*hato-http-client*})))
-              (is (= {:method "CONNECT" :uri "example.com:443"} (select-keys @req* [:method :uri])))
+                   #"Unrecognized SSL message, plaintext connection?" (hato/get "https://localhost/test" {:http-client client/*hato-http-client*})))
+              (is (= {:method "CONNECT" :uri "localhost:443"} (select-keys @req* [:method :uri])))
 
               (finally
                 (alter-var-root #'client/*hato-http-client* (constantly nil))))))))))

@@ -133,7 +133,7 @@
                          (.proxy (ProxySelector/of (InetSocketAddress. ^String prx-host ^long prx-port)))
                          (.build))
               request (-> (HttpRequest/newBuilder)
-                          (.uri (URI/create "http://example.com/test"))
+                          (.uri (URI/create "http://localhost:99/test"))
                           (.GET)
                           (.build))
               response (.send client request (HttpResponse$BodyHandlers/ofString))
@@ -165,7 +165,7 @@
                          (.build))
               payload "{\"foo\":\"bar\"}"
               request (-> (HttpRequest/newBuilder)
-                          (.uri (URI/create "http://example.com/create"))
+                          (.uri (URI/create "http://localhost:99/create"))
                           (.POST (HttpRequest$BodyPublishers/ofString payload))
                           (.header "Content-Type" "application/json")
                           (.build))
@@ -194,7 +194,7 @@
                          (.build))
               payload "{\"bad\":true}"
               request (-> (HttpRequest/newBuilder)
-                          (.uri (URI/create "http://example.com/fail"))
+                          (.uri (URI/create "http://localhost:99/fail"))
                           (.POST (HttpRequest$BodyPublishers/ofString payload))
                           (.header "Content-Type" "application/json")
                           (.build))
@@ -223,7 +223,7 @@
 
             ;; HTTPS target
               request (-> (HttpRequest/newBuilder)
-                          (.uri (URI/create "https://example.com/"))
+                          (.uri (URI/create "https://localhost/"))
                           (.GET)
                           (.build))]
 
@@ -257,7 +257,7 @@
                                              (PasswordAuthentication. username (char-array password)))))
                          (.build))
               request (-> (HttpRequest/newBuilder)
-                          (.uri (URI/create "http://example.com/auth"))
+                          (.uri (URI/create "http://localhost:99/auth"))
                           (.GET)
                           (.build))
               response (.send client request (HttpResponse$BodyHandlers/ofString))
@@ -285,7 +285,7 @@
                                              (PasswordAuthentication. "wrong" (char-array "creds")))))
                          (.build))
               request (-> (HttpRequest/newBuilder)
-                          (.uri (URI/create "http://example.com/auth-fail"))
+                          (.uri (URI/create "http://localhost:99/auth-fail"))
                           (.GET)
                           (.build))]
           (is (thrown-with-msg?
@@ -341,7 +341,7 @@
                               (PasswordAuthentication. user (char-array pass)))))
                          (.build))
               req (-> (HttpRequest/newBuilder)
-                      (.uri (URI/create "https://example.com/x"))
+                      (.uri (URI/create "https://localhost/x"))
                       (.GET)
                       (.build))]
         ;; We don't care if HTTPS fails after tunneling,
@@ -368,7 +368,7 @@
                        (.build))
 
             req (-> (HttpRequest/newBuilder)
-                    (.uri (URI/create "http://example.com/test"))
+                    (.uri (URI/create "http://localhost:99/test"))
                     (.POST (HttpRequest$BodyPublishers/ofString "hello"))
                     (.build))
 
@@ -386,7 +386,7 @@
                        (.build))
 
             req (-> (HttpRequest/newBuilder)
-                    (.uri (URI/create "http://example.com/fail"))
+                    (.uri (URI/create "http://localhost:99/fail"))
                     (.POST (HttpRequest$BodyPublishers/ofString "x"))
                     (.build))
 
@@ -409,7 +409,7 @@
                             (PasswordAuthentication. "user1" (char-array "secret")))))
                        (.build))
             req (-> (HttpRequest/newBuilder)
-                    (.uri (URI/create "http://example.com/test"))
+                    (.uri (URI/create "http://localhost:99/test"))
                     (.GET)
                     (.build))
             resp (.send client req (HttpResponse$BodyHandlers/ofString))]
@@ -423,7 +423,7 @@
                        (.proxy (ProxySelector/of (InetSocketAddress. cth/*proxy-host* ^long cth/*proxy-port*)))
                        (.build))
             req (-> (HttpRequest/newBuilder)
-                    (.uri (URI/create "http://example.com/test"))
+                    (.uri (URI/create "http://localhost:99/test"))
                     (.GET)
                     (.build))
             resp (.send client req (HttpResponse$BodyHandlers/ofString))]
@@ -447,7 +447,7 @@
   (testing "Routes HTTP requests made through Hato to the temporary proxy"
     (cth/with-client-proxied {}
       (fn [req] {:status 200 :body (:uri req)})
-      (let [resp (hato/get "http://example.com/test"
+      (let [resp (hato/get "http://localhost:99/test"
                            {:http-client client/*hato-http-client*})]
         (is (= 200 (:status resp)))
         (is (= "/test" (:body resp))))))
