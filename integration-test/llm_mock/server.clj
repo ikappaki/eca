@@ -18,7 +18,6 @@
   otherwise responds with 403."
   [req]
   (let [{:keys [request-method uri headers]} req]
-    (println :req request-method)
     (if (and eca/*http-proxy* (not (get headers "via")))
       {:status 403
        :headers {"Content-Type" "text/plain"}

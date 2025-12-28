@@ -1,4 +1,5 @@
 (ns eca.client-http
+  "Support for the  HTTP client to make outbound requests."
   (:require [eca.logger :as logger]
             [eca.proxy :as proxy])
   (:import  [java.net URI Proxy Proxy$Type InetSocketAddress ProxySelector]
@@ -21,8 +22,6 @@
   :port     - the proxy port
   :username - optional username for proxy authentication
   :password - optional password for proxy authentication
-
-
 
   Returns a map suitable for passing to `hato.client-http/build-http-client`."
   [{:eca.client-http/keys [proxy-http proxy-https] :as opts}]

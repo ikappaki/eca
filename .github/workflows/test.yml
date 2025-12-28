@@ -175,7 +175,7 @@ jobs:
           chmod +x eca
 
       - name: Run integration tests
-        run: bb integration-test --proxy
+        run: bb integration-test
 
   nix-build:
     needs: unit-test
