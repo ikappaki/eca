@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
         jdk: [24]
         include:
           - os: windows-latest
@@ -49,12 +49,13 @@ jobs:
 
       - name: Run tests
         run: bb test
+
   jvm-integration-test:
     runs-on: ${{matrix.os}}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-24.04]
         jdk: [24]
         # include:
         #   - os: windows-latest
@@ -102,74 +103,80 @@ jobs:
           cat /home/runner/work/eca/eca/integration-test/out/tinyproxy.log
           cat /home/runner/work/eca/eca/integration-test/out/server.stderr.txt
 
-  # graalvm-build:
-  #   runs-on: ubuntu-22.04
-  #   strategy:
-  #     fail-fast: false
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Install Clojure
-  #       uses: DeLaGuardo/setup-clojure@master
-  #       with:
-  #         cli: '1.12.0.1530'
-  #         bb: '1.12.200'
+  graalvm-build:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Clojure
+        uses: DeLaGuardo/setup-clojure@master
+        with:
+          cli: '1.12.0.1530'
+          bb: '1.12.200'
 
-  #     - uses: graalvm/setup-graalvm@v1
-  #       with:
-  #         java-version: '24'
-  #         distribution: 'graalvm'
-  #         native-image-musl: true
-  #         github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '24'
+          distribution: 'graalvm'
+          native-image-musl: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
-  #     - name: Build static Linux native image
-  #       env:
-  #         ECA_XMX: "-J-Xmx6g"
-  #         ECA_STATIC: true
-  #         ECA_MUSL: true
-  #       run: |
-  #         bb native-cli
+      - name: Build static Linux native image
+        env:
+          ECA_XMX: "-J-Xmx6g"
+          ECA_STATIC: true
+          ECA_MUSL: true
+        run: |
+          bb native-cli
 
-  #     - name: Compress binary
-  #       uses: svenstaro/upx-action@v2
-  #       with:
-  #         file: eca
+      - name: Compress binary
+        uses: svenstaro/upx-action@v2
+        with:
+          file: eca
 
-  #     - name: Upload
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: eca-native
-  #         path: eca
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: eca-native
+          path: eca
 
-  # graalvm-integration-test:
-  #   needs: graalvm-build
-  #   runs-on: ubuntu-22.04
-  #   strategy:
-  #     fail-fast: false
-  #   steps:
-  #     - uses: actions/checkout@v4
+  graalvm-integration-test:
+    needs: graalvm-build
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Set up JDK 24
-  #       uses: actions/setup-java@v3
-  #       with:
-  #         distribution: 'adopt'
-  #         java-version: 24
+      - name: Set up JDK 24
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'adopt'
+          java-version: 24
 
-  #     - name: Install clojure build tools
-  #       uses: DeLaGuardo/setup-clojure@master
-  #       with:
-  #         cli: '1.12.0.1530'
-  #         bb: '1.12.200'
+      - name: Install clojure build tools
+        uses: DeLaGuardo/setup-clojure@master
+        with:
+          cli: '1.12.0.1530'
+          bb: '1.12.200'
 
-  #     - uses: actions/download-artifact@v4
-  #       name: eca-native
+      - name: Install tinyproxy
+        if: "startsWith (matrix.os, 'ubuntu')"
+        run: |
+          sudo apt-get update -y -qq
+          sudo apt-get install -y -qq tinyproxy
 
-  #     - name: Setup binary
-  #       run: |
-  #         cp -rf eca-native/eca eca
-  #         chmod +x eca
+      - uses: actions/download-artifact@v4
+        name: eca-native
 
-  #     - name: Run integration tests
-  #       run: bb integration-test
+      - name: Setup binary
+        run: |
+          cp -rf eca-native/eca eca
+          chmod +x eca
+
+      - name: Run integration tests
+        run: bb integration-test --proxy
 
   # nix-build:
   #   needs: unit-test
